@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- La page ne charge rien d'ailleurs (ni police, ni bibliothèque, ni mesure d'audience) et ne
+     parle qu'au serveur d'AirClean. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src https://ipwddkwtpcmieijhqpup.supabase.co http://localhost:54321; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex">
+<title>Espace partenaire · AirClean</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="../" aria-label="AirClean, retour au site">
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      AirClean <span class="logo-sub">Partenaires</span>
+    </a>
+    <div class="who" id="who" hidden>
+      <span id="who-name"></span>
+      <button type="button" class="link" id="logout">Se déconnecter</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="banner" id="banner" role="alert" hidden></p>
+
+  <!-- Connexion -->
+  <section id="view-login" hidden>
+    <div class="login">
+      <div>
+        <h1>Espace partenaire</h1>
+        <p class="lede">Connectez-vous avec le compte de votre application AirClean intervenant. Vous retrouvez ici votre compte et vos relevés. Les sociétés partenaires y inscrivent aussi leurs salariés.</p>
+      </div>
+      <form id="login-form" class="card" novalidate>
+        <label for="login-email">Adresse e-mail</label>
+        <input id="login-email" type="email" autocomplete="username" required>
+        <label for="login-password">Mot de passe</label>
+        <input id="login-password" type="password" autocomplete="current-password" required>
+        <p class="error" id="login-error" role="alert" hidden></p>
+        <button type="submit" class="btn" id="login-submit">Se connecter</button>
+        <p class="hint">Mot de passe oublié, ou pas encore de compte ? Tout se fait dans l'application.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- Pas de dossier d'intervenant -->
+  <section id="view-none" hidden>
+    <h1>Pas encore partenaire</h1>
+    <p class="lede">Ce compte n'a pas de dossier d'intervenant. Pour devenir partenaire, déposez votre dossier depuis l'application AirClean intervenant, puis revenez ici.</p>
+  </section>
+
+  <!-- Espace -->
+  <section id="view-app" hidden>
+    <nav class="tabs" aria-label="Rubriques">
+      <a href="#releves" data-tab="releves">Relevés</a>
+      <a href="#salaries" data-tab="salaries" id="nav-salaries" hidden>Salariés</a>
+      <a href="#compte" data-tab="compte">Mon compte</a>
+    </nav>
+
+    <div id="tab-releves" hidden>
+      <h1>Relevés</h1>
+      <div class="totals" id="totals"></div>
+      <p class="note" id="billing-note"></p>
+      <div class="row-between">
+        <h2>Mois par mois</h2>
+        <button type="button" class="btn ghost small" id="export-csv">Exporter le détail (CSV)</button>
+      </div>
+      <div id="months"></div>
+    </div>
+
+    <div id="tab-salaries" hidden>
+      <div class="row-between">
+        <h1>Salariés</h1>
+        <button type="button" class="btn" id="employee-add">Inscrire un salarié</button>
+      </div>
+      <p class="note" id="employees-note"></p>
+      <div id="employees"></div>
+    </div>
+
+    <div id="tab-compte" hidden>
+      <h1>Mon compte</h1>
+      <dl class="facts" id="account"></dl>
+      <p class="note">Pour modifier ces informations, utilisez l'application AirClean intervenant.</p>
+    </div>
+  </section>
+
+  <p class="loading" id="loading">Chargement…</p>
+</main>
+
+<!-- Fiche d'un salarié -->
+<dialog id="employee-dialog" aria-labelledby="employee-title">
+  <form id="employee-form" novalidate>
+    <h2 id="employee-title">Inscrire un salarié</h2>
+
+    <label for="emp-name">Nom et prénom</label>
+    <input id="emp-name" type="text" autocomplete="off" maxlength="120" required>
+
+    <label for="emp-email">Adresse e-mail du salarié</label>
+    <input id="emp-email" type="email" autocomplete="off" maxlength="254" required>
+
+    <fieldset>
+      <legend>Pièce d'identité <span class="req">obligatoire</span></legend>
+      <p class="hint">Carte d'identité, passeport ou titre de séjour. Une photo nette, recto puis verso s'il y en a un.</p>
+      <ul class="files" id="emp-identity-files"></ul>
+      <input id="emp-identity" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+    </fieldset>
+
+    <label class="check" for="emp-permit">
+      <input id="emp-permit" type="checkbox">
+      <span>Ce salarié a besoin d'un titre de séjour pour travailler en France <small>(il n'est ni français, ni ressortissant de l'Union européenne, de l'Espace économique européen ou de la Suisse)</small></span>
+    </label>
+
+    <fieldset id="emp-permit-box" hidden>
+      <legend>Titre de séjour autorisant le travail <span class="req">obligatoire</span></legend>
+      <ul class="files" id="emp-permit-files"></ul>
+      <input id="emp-permit-file" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+      <label for="emp-until">Date de fin de validité</label>
+      <input id="emp-until" type="date">
+    </fieldset>
+
+    <label class="check" for="emp-attest" id="emp-attest-row">
+      <input id="emp-attest" type="checkbox">
+      <span>J'atteste être l'employeur de cette personne, avoir vérifié son identité et son droit de travailler en France, et l'avoir informée que ces pièces sont transmises à AirClean.</span>
+    </label>
+
+    <p class="error" id="emp-error" role="alert" hidden></p>
+    <div class="actions">
+      <button type="button" class="btn ghost" id="emp-cancel">Annuler</button>
+      <button type="submit" class="btn" id="emp-submit">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Confirmation de retrait -->
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <h2 id="confirm-title">Retirer ce salarié ?</h2>
+  <p id="confirm-text"></p>
+  <p class="error" id="confirm-error" role="alert" hidden></p>
+  <div class="actions">
+    <button type="button" class="btn ghost" id="confirm-no">Annuler</button>
+    <button type="button" class="btn danger" id="confirm-yes">Retirer</button>
+  </div>
+</dialog>
+
+<!-- Lecture d'une pièce -->
+<dialog id="viewer" aria-label="Pièce déposée">
+  <img id="viewer-img" alt="">
+  <div class="actions"><button type="button" class="btn ghost" id="viewer-close">Fermer</button></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
