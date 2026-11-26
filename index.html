@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AirClean</title>
+<meta name="description" content="Ménage, accueil des voyageurs et petit bricolage pour votre location de courte durée. Vous commandez dans l'app et vous suivez l'intervenant en direct, du stock jusqu'à chez vous.">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/* Mise en page : une colonne large et calme ; le parcours de l'intervenant est dessiné comme un
+   itinéraire (une ligne, des arrêts), parce que c'est ce que le client voit dans l'app. */
+:root {
+  --bg: #eef2f1;
+  --surface: #ffffff;
+  --surface-2: #f4f7f6;
+  --line: #dbe4e1;
+  --ink: #0f2e2b;
+  --ink-2: #4d6460;
+  --ink-3: #7c918c;
+  --brand: #0ea88f;
+  --brand-deep: #0b6e63;
+  --brand-soft: #d8f0ea;
+  --on-brand: #ffffff;
+  --band: #0b4f47;
+  --band-ink: #ffffff;
+  --band-ink-2: #b9dcd5;
+  --phone: #0f2e2b;
+  --map: #e3ece9;
+  --map-road: #ffffff;
+  --shadow: 0 24px 60px -24px rgba(15, 46, 43, .35);
+
+  --display: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --gutter-l: max(20px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(20px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1715; --surface: #12221f; --surface-2: #172b27; --line: #243934;
+    --ink: #e9f2f0; --ink-2: #a9bdb8; --ink-3: #7f9590;
+    --brand: #2cc4a9; --brand-deep: #6fdcc7; --brand-soft: #16382f; --on-brand: #06231e;
+    --band: #0f2d29; --band-ink: #ffffff; --band-ink-2: #a9cfc7;
+    --phone: #030807; --map: #1b302b; --map-road: #2a443e;
+    --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1715; --surface: #12221f; --surface-2: #172b27; --line: #243934;
+  --ink: #e9f2f0; --ink-2: #a9bdb8; --ink-3: #7f9590;
+  --brand: #2cc4a9; --brand-deep: #6fdcc7; --brand-soft: #16382f; --on-brand: #06231e;
+  --band: #0f2d29; --band-ink: #ffffff; --band-ink-2: #a9cfc7;
+  --phone: #030807; --map: #1b302b; --map-road: #2a443e;
+  --shadow: 0 24px 60px -24px rgba(0, 0, 0, .7);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 17px/1.55 var(--body); -webkit-font-smoothing: antialiased;
+}
+img, svg { max-width: 100%; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; border-radius: 6px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -.01em; }
+p { margin: 0; }
+
+.wrap { max-width: 1080px; margin-inline: auto; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+
+/* En-tête */
+.top { padding-block: 18px; }
+.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; font: 700 1.25rem var(--display); text-decoration: none; }
+.logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; }
+.pill {
+  display: inline-block; padding: 9px 16px; border-radius: 999px; text-decoration: none;
+  background: var(--ink); color: var(--bg); font-weight: 600; font-size: .92rem;
+}
+
+/* Ouverture */
+.hero .wrap {
+  display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr);
+  gap: 48px; align-items: center; padding-block: 40px 72px;
+}
+.hero h1 { font-size: clamp(2.3rem, 5.4vw, 3.9rem); line-height: 1.04; font-weight: 800; }
+.hero h1 em { font-style: normal; color: var(--brand-deep); }
+.lede { margin-top: 20px; font-size: 1.15rem; color: var(--ink-2); max-width: 34em; }
+.stores { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.store {
+  display: inline-flex; align-items: center; gap: 12px; min-width: 190px;
+  padding: 11px 18px 11px 16px; border-radius: 14px; text-decoration: none;
+  background: var(--ink); color: var(--bg); position: relative;
+}
+.store svg { width: 26px; height: 26px; flex: none; fill: currentColor; }
+.store small { display: block; font-size: .7rem; opacity: .75; line-height: 1.2; }
+.store b { display: block; font: 700 1.08rem/1.2 var(--display); }
+.store .soon {
+  position: absolute; top: -9px; right: -6px; padding: 2px 9px; border-radius: 999px;
+  background: var(--brand); color: var(--on-brand); font-size: .68rem; font-weight: 700; letter-spacing: .03em;
+}
+.store[aria-disabled="true"] { cursor: default; }
+.hint { margin-top: 14px; font-size: .9rem; color: var(--ink-3); }
+
+/* Téléphone d'exemple */
+.phone-col { display: grid; justify-items: center; gap: 14px; }
+.phone {
+  width: min(100%, 310px); border-radius: 42px; padding: 10px; background: var(--phone);
+  box-shadow: var(--shadow);
+}
+.screen { border-radius: 33px; overflow: hidden; background: var(--surface); }
+.map { display: block; width: 100%; height: auto; background: var(--map); }
+.map .road { stroke: var(--map-road); stroke-width: 9; stroke-linecap: round; fill: none; }
+.map .route { stroke: var(--brand); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 9; fill: none; }
+.map .stop { fill: var(--surface); stroke: var(--ink); stroke-width: 2.5; }
+.map .home { fill: var(--ink); }
+.map text { font: 600 10px var(--body); fill: var(--ink-2); }
+.agent { transition: transform 1.4s cubic-bezier(.5, 0, .2, 1); }
+.agent circle:first-child { fill: var(--brand); opacity: .25; }
+.agent circle:last-child { fill: var(--brand); stroke: var(--surface); stroke-width: 3; }
+.status { padding: 14px 18px 4px; }
+.status small { color: var(--ink-3); font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 600; }
+.status strong { display: block; font: 700 1.12rem/1.3 var(--display); min-height: 1.5em; }
+.track { list-style: none; margin: 0; padding: 8px 18px 20px; }
+.track li {
+  display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center;
+  padding-block: 7px; font-size: .86rem; color: var(--ink-3); position: relative;
+}
+.track li::before {
+  content: ""; width: 10px; height: 10px; border-radius: 50%; justify-self: center;
+  border: 2px solid var(--line); background: var(--surface); z-index: 1;
+}
+.track li + li::after {
+  content: ""; position: absolute; left: 8px; top: -50%; height: 100%; width: 2px; background: var(--line);
+}
+.track li.done { color: var(--ink-2); }
+.track li.done::before { background: var(--brand); border-color: var(--brand); }
+.track li.done + li::after, .track li.now::after { background: var(--brand); }
+.track li.now { color: var(--ink); font-weight: 650; }
+.track li.now::before { border-color: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft); }
+.track time { font-variant-numeric: tabular-nums; font-size: .78rem; color: var(--ink-3); font-weight: 400; }
+.caption { font-size: .85rem; color: var(--ink-3); }
+
+/* Sections */
+section { padding-block: 72px; }
+.eyebrow { font-size: .78rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--brand-deep); }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); line-height: 1.12; font-weight: 800; margin-top: 10px; }
+.intro { margin-top: 14px; color: var(--ink-2); max-width: 38em; }
+
+.services { background: var(--surface); }
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 36px; margin-top: 40px; }
+.three > div { border-top: 3px solid var(--ink); padding-top: 18px; }
+.three h3 { font-size: 1.25rem; }
+.three p { margin-top: 8px; color: var(--ink-2); font-size: .98rem; }
+
+/* Le parcours, dessiné comme un itinéraire */
+.route-list { list-style: none; margin: 44px 0 0; padding: 0; max-width: 720px; counter-reset: stop; }
+.route-list li {
+  counter-increment: stop; position: relative;
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 22px; padding-bottom: 34px;
+}
+.route-list li:last-child { padding-bottom: 0; }
+.route-list li::before {
+  content: counter(stop); width: 44px; height: 44px; border-radius: 50%; z-index: 1;
+  display: grid; place-items: center; background: var(--brand); color: var(--on-brand);
+  font: 800 1.05rem var(--display);
+}
+.route-list li:not(:last-child)::after {
+  content: ""; position: absolute; left: 21px; top: 44px; bottom: 0; width: 2px;
+  background: repeating-linear-gradient(to bottom, var(--brand) 0 3px, transparent 3px 10px);
+}
+.route-list li.detour::before { background: var(--surface); color: var(--brand-deep); border: 2px dashed var(--brand); }
+.route-list h3 { font-size: 1.2rem; padding-top: 8px; }
+.route-list p { margin-top: 6px; color: var(--ink-2); max-width: 34em; }
+.tag {
+  display: inline-block; margin-left: 8px; padding: 2px 10px; border-radius: 999px; vertical-align: middle;
+  background: var(--brand-soft); color: var(--brand-deep); font: 600 .74rem var(--body); letter-spacing: 0;
+}
+
+/* Photos de référence */
+.proof { background: var(--surface); }
+.proof .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pair figure { margin: 0; }
+.pair svg { display: block; width: 100%; height: auto; border-radius: 14px; background: var(--surface-2); }
+.pair .wall { fill: var(--surface-2); }
+.pair .floor { fill: var(--line); }
+.pair .bed { fill: var(--brand-soft); }
+.pair .frame { fill: var(--ink-3); }
+.pair .pillow { fill: var(--surface); stroke: var(--line); stroke-width: 1.5; }
+.pair .guide { fill: none; stroke: var(--brand); stroke-width: 1.5; stroke-dasharray: 5 5; }
+.pair .ok { fill: var(--brand); }
+.pair .tick { fill: none; stroke: var(--on-brand); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.pair figcaption { margin-top: 8px; font-size: .86rem; color: var(--ink-2); }
+
+/* Téléchargement */
+.get { background: var(--band); color: var(--band-ink); text-align: left; }
+.get .eyebrow { color: var(--band-ink-2); }
+.get .intro, .get .hint { color: var(--band-ink-2); }
+.get .store { background: var(--band-ink); color: var(--band); }
+
+footer { padding-block: 28px; font-size: .88rem; color: var(--ink-3); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+
+@media (max-width: 820px) {
+  .hero .wrap, .proof .wrap { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+  .hero .wrap { padding-block: 20px 56px; }
+  .three { grid-template-columns: minmax(0, 1fr); gap: 26px; }
+  section { padding-block: 56px; }
+  .route-list li { gap: 16px; }
+  .tag { margin: 6px 0 0; display: table; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .agent { transition: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="logo" href="#" aria-label="AirClean, accueil">
+      <span class="logo-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      AirClean
+    </a>
+    <a class="pill" href="#telecharger">Télécharger l'app</a>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Le ménage de votre location, <em>suivi en direct</em>.</h1>
+        <p class="lede">Vous commandez un ménage, un accueil de voyageurs ou un petit dépannage en quelques minutes. Ensuite vous voyez tout : qui vient, où il en est, et le résultat en photos.</p>
+        <div class="stores">
+          <a class="store" data-store="ios" href="#telecharger">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.7 2.4 3 2.4 1.2-.1 1.7-.8 3.1-.8s1.9.8 3.1.7c1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.7-1-2.7-3.9zM14.3 5.8c.6-.8 1.1-1.9.9-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.5 2.9-1.3z"/></svg>
+            <span><small>Télécharger dans</small><b>l'App Store</b></span>
+          </a>
+          <a class="store" data-store="android" href="#telecharger">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 3.3c-.3.3-.5.7-.5 1.3v14.8c0 .6.2 1 .5 1.3l8.3-8.7zM13.9 13.1l2.6 2.7-9.7 5.5zM13.9 10.9L6.8 2.7l9.7 5.5zM17.6 9l3.1 1.8c.9.5.9 1.9 0 2.4L17.6 15l-2.9-3z"/></svg>
+            <span><small>Disponible sur</small><b>Google Play</b></span>
+          </a>
+        </div>
+      </div>
+
+      <div class="phone-col">
+        <div class="phone" aria-label="Exemple d'écran de suivi dans l'application">
+          <div class="screen">
+            <svg class="map" viewBox="0 0 290 190" role="img" aria-label="Carte : l'intervenant passe par le stock puis se rend au logement">
+              <path class="road" d="M-10 150 L300 120"/>
+              <path class="road" d="M70 -10 L120 200"/>
+              <path class="road" d="M190 -10 L215 200"/>
+              <path class="road" d="M-10 55 L300 40"/>
+              <path class="route" d="M34 150 L103 140 L92 96 L92 52 L196 46 L238 44"/>
+              <rect class="stop" x="82" y="86" width="20" height="20" rx="5"/>
+              <text x="108" y="100">Stock</text>
+              <circle class="home" cx="238" cy="44" r="9"/>
+              <text x="218" y="68">Chez vous</text>
+              <g class="agent" id="agent" style="transform: translate(150px, 49px)">
+                <circle r="15"/><circle r="8"/>
+              </g>
+            </svg>
+            <div class="status">
+              <small>Ménage · Paris 10</small>
+              <strong id="status">Karim arrive dans 8 min</strong>
+            </div>
+            <ol class="track" id="track">
+              <li class="done"><span>Commande confirmée</span><time>9:02</time></li>
+              <li class="done"><span>Karim a accepté</span><time>9:06</time></li>
+              <li class="done"><span>Linge récupéré au stock</span><time>9:31</time></li>
+              <li class="now"><span>En route vers chez vous</span><time>9:44</time></li>
+              <li><span>Ménage et photos</span><time></time></li>
+            </ol>
+          </div>
+        </div>
+        <p class="caption">Exemple de suivi dans l'application</p>
+      </div>
+    </div>
+  </div>
+
+  <section class="services">
+    <div class="wrap">
+      <p class="eyebrow">Ce que vous pouvez commander</p>
+      <h2>Trois services pour une location qui tourne sans vous</h2>
+      <div class="three">
+        <div>
+          <h3>Ménage</h3>
+          <p>Standard ou approfondi, entre deux voyageurs. Le linge de lit, les serviettes et les produits peuvent être fournis : les draps sont choisis d'après la taille de vos lits.</p>
+        </div>
+        <div>
+          <h3>Accueil des voyageurs</h3>
+          <p>Un intervenant accueille vos voyageurs à l'arrivée, remet les clés et fait le point au départ.</p>
+        </div>
+        <div>
+          <h3>Petit bricolage</h3>
+          <p>Une ampoule, un évier bouché, une poignée qui lâche. Vous décrivez la panne, vous recevez un devis, quelqu'un passe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="comment">
+    <div class="wrap">
+      <p class="eyebrow">Comment ça se passe</p>
+      <h2>De la commande au rapport, étape par étape</h2>
+      <p class="intro">Chaque étape s'affiche dans l'app au moment où elle se produit. Vous n'avez personne à appeler pour savoir où en est votre ménage.</p>
+
+      <ol class="route-list">
+        <li>
+          <div>
+            <h3>Vous commandez</h3>
+            <p>Vous choisissez le logement, le service, le jour et l'heure. Le prix est affiché avant de confirmer.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Un intervenant accepte</h3>
+            <p>Votre demande est proposée aux intervenants disponibles. Dès que l'un d'eux l'accepte, vous voyez son nom.</p>
+          </div>
+        </li>
+        <li class="detour">
+          <div>
+            <h3>Il passe au stock <span class="tag">Si vous avez commandé du linge</span></h3>
+            <p>L'intervenant récupère vos draps, vos serviettes et vos produits. Vous êtes prévenu quand votre commande est chargée.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Il est en route</h3>
+            <p>Vous suivez sa position sur une carte, avec l'heure d'arrivée estimée.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Il arrive chez vous</h3>
+            <p>L'heure d'arrivée est enregistrée et la prestation commence.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Il photographie chaque pièce</h3>
+            <p>À la fin, l'intervenant reprend vos photos de référence sous le même angle. Les deux images sont comparées.</p>
+          </div>
+        </li>
+        <li>
+          <div>
+            <h3>Vous recevez le rapport</h3>
+            <p>Les photos, l'heure de fin et la facture sont dans l'app. Vous donnez votre avis.</p>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="proof">
+    <div class="wrap">
+      <div>
+        <p class="eyebrow">Vos photos de référence</p>
+        <h2>Vous montrez une fois comment le logement doit être rendu</h2>
+        <p class="intro">Photographiez chaque pièce telle que vous la voulez. À chaque passage, l'intervenant refait la même photo, et vous comparez d'un coup d'œil, où que vous soyez.</p>
+      </div>
+      <div class="pair" aria-hidden="true">
+        <figure>
+          <svg viewBox="0 0 200 150">
+            <rect class="wall" width="200" height="150"/><rect class="floor" y="112" width="200" height="38"/>
+            <rect class="frame" x="36" y="52" width="128" height="34" rx="6"/>
+            <rect class="bed" x="30" y="80" width="140" height="42" rx="8"/>
+            <rect class="pillow" x="50" y="68" width="42" height="22" rx="7"/><rect class="pillow" x="108" y="68" width="42" height="22" rx="7"/>
+          </svg>
+          <figcaption>Votre photo de référence</figcaption>
+        </figure>
+        <figure>
+          <svg viewBox="0 0 200 150">
+            <rect class="wall" width="200" height="150"/><rect class="floor" y="112" width="200" height="38"/>
+            <rect class="frame" x="36" y="52" width="128" height="34" rx="6"/>
+            <rect class="bed" x="30" y="80" width="140" height="42" rx="8"/>
+            <rect class="pillow" x="50" y="68" width="42" height="22" rx="7"/><rect class="pillow" x="108" y="68" width="42" height="22" rx="7"/>
+            <rect class="guide" x="22" y="44" width="156" height="86" rx="10"/>
+            <circle class="ok" cx="170" cy="28" r="15"/><path class="tick" d="M163 28l5 5 9-10"/>
+          </svg>
+          <figcaption>La photo de l'intervenant, après le ménage</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="get" id="telecharger">
+    <div class="wrap">
+      <p class="eyebrow">Télécharger</p>
+      <h2>Tout se passe dans l'application</h2>
+      <p class="intro">Créez votre compte, ajoutez votre logement et passez votre première commande depuis votre téléphone.</p>
+      <div class="stores">
+        <a class="store" data-store="ios" data-final href="#telecharger">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.2-2.8.8-3.5.8-.7 0-1.9-.8-3.1-.8-1.6 0-3.1.9-3.9 2.4-1.7 2.9-.4 7.2 1.2 9.5.8 1.2 1.7 2.4 3 2.4 1.2-.1 1.7-.8 3.1-.8s1.9.8 3.1.7c1.3 0 2.1-1.2 2.9-2.3.9-1.3 1.3-2.6 1.3-2.7-.1 0-2.7-1-2.7-3.9zM14.3 5.8c.6-.8 1.1-1.9.9-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1.1.1 2.2-.5 2.9-1.3z"/></svg>
+          <span><small>Télécharger dans</small><b>l'App Store</b></span>
+        </a>
+        <a class="store" data-store="android" data-final href="#telecharger">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 3.3c-.3.3-.5.7-.5 1.3v14.8c0 .6.2 1 .5 1.3l8.3-8.7zM13.9 13.1l2.6 2.7-9.7 5.5zM13.9 10.9L6.8 2.7l9.7 5.5zM17.6 9l3.1 1.8c.9.5.9 1.9 0 2.4L17.6 15l-2.9-3z"/></svg>
+          <span><small>Disponible sur</small><b>Google Play</b></span>
+        </a>
+      </div>
+      <p class="hint" id="soon-note" hidden>L'application arrive bientôt sur l'App Store et Google Play.</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>AirClean · Ménage, accueil et bricolage pour les locations de courte durée</span>
+    <span>© 2026</span>
+  </div>
+</footer>
+
+<script>
+/* ─── À RENSEIGNER le jour de la sortie : adresses des fiches sur les stores. ───
+   Tant qu'une adresse est vide, le bouton porte la mention « Bientôt » et ne mène nulle part. */
+var STORES = {
+  ios: "",      // ex. https://apps.apple.com/fr/app/…/id…
+  android: ""   // ex. https://play.google.com/store/apps/details?id=com.airclean.client
+};
+
+(function () {
+  var missing = false;
+  document.querySelectorAll(".store").forEach(function (a) {
+    var url = STORES[a.dataset.store];
+    if (url) { a.href = url; a.rel = "noopener"; return; }
+    missing = true;
+    if (a.hasAttribute("data-final")) {
+      a.setAttribute("aria-disabled", "true");
+      a.removeAttribute("href");
+      var s = document.createElement("span");
+      s.className = "soon"; s.textContent = "Bientôt";
+      a.appendChild(s);
+    }
+  });
+  document.getElementById("soon-note").hidden = !missing;
+
+  /* Le téléphone d'exemple rejoue le suivi. Sans animation demandée, il reste sur « en route ». */
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  var steps = [
+    { at: [34, 150], text: "Recherche d'un intervenant" },
+    { at: [34, 150], text: "Karim se rend au stock" },
+    { at: [92, 96],  text: "Votre linge est chargé" },
+    { at: [150, 49], text: "Karim arrive dans 8 min" },
+    { at: [238, 44], text: "Karim est sur place" }
+  ];
+  var rows = document.querySelectorAll("#track li");
+  var agent = document.getElementById("agent");
+  var status = document.getElementById("status");
+  var i = 3;
+  setInterval(function () {
+    i = (i + 1) % steps.length;
+    rows.forEach(function (li, n) { li.className = n < i ? "done" : n === i ? "now" : ""; });
+    agent.style.transform = "translate(" + steps[i].at[0] + "px, " + steps[i].at[1] + "px)";
+    status.textContent = steps[i].text;
+  }, 2800);
+})();
+</script>
+</body>
+</html>
