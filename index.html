@@ -74,6 +74,9 @@ p { margin: 0; }
 .top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .logo { display: inline-flex; align-items: center; gap: 10px; font: 700 1.25rem var(--display); text-decoration: none; }
 .logo-mark { width: 30px; height: 30px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; }
+.top-links { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; justify-content: flex-end; }
+.partner { font-weight: 600; font-size: .92rem; text-decoration: none; color: var(--ink-2); }
+.partner:hover { color: var(--ink); text-decoration: underline; }
 .pill {
   display: inline-block; padding: 9px 16px; border-radius: 999px; text-decoration: none;
   background: var(--ink); color: var(--bg); font-weight: 600; font-size: .92rem;
@@ -235,7 +238,10 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
       </span>
       AirClean
     </a>
-    <a class="pill" href="#telecharger">Télécharger l'app</a>
+    <nav class="top-links" aria-label="Accès">
+      <a class="partner" href="partenaires/">Accès partenaire</a>
+      <a class="pill" href="#telecharger">Télécharger l'app</a>
+    </nav>
   </div>
 </header>
 
@@ -445,7 +451,7 @@ footer .wrap { display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: s
 <footer>
   <div class="wrap">
     <span>AirClean · Ménage, check-in, check-out et petits travaux pour les locations de courte ou moyenne durée</span>
-    <span>© 2026</span>
+    <span><a href="partenaires/">Accès partenaire</a> · © 2026</span>
   </div>
 </footer>
 
