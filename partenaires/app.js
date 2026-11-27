@@ -481,6 +481,7 @@
 
   // ── Fiche d'un salarié (inscription ou correction) ──
   var editing = null; // la fiche en cours de correction, ou null pour une inscription
+  var lastSaved = null; // nom du salarié qui vient d'être inscrit (« à la chaîne »)
   var doomed = []; // pièces déjà déposées que l'utilisateur veut supprimer (faites à l'enregistrement)
 
   function openEmployee(employee) {
@@ -498,8 +499,15 @@
     $("emp-attest-row").hidden = Boolean(editing && editing.attested_at);
     $("emp-error").hidden = true;
     $("emp-submit").disabled = false;
+    // « Enregistrer et inscrire le suivant » : pour inscrire ses salariés à la chaîne, sans refermer.
+    $("emp-next").hidden = Boolean(editing);
+    $("emp-next").disabled = false;
+    $("emp-done").hidden = !lastSaved;
+    $("emp-done").textContent = lastSaved ? "✓ " + lastSaved + " est inscrit. Au suivant." : "";
+    lastSaved = null;
     renderDialogFiles();
-    $("employee-dialog").showModal();
+    if (!$("employee-dialog").open) $("employee-dialog").showModal();
+    $("emp-name").focus();
   }
 
   /** Les pièces déjà déposées, dans la fiche, avec de quoi en retirer une. */
@@ -530,10 +538,12 @@
     $("emp-error").hidden = false;
     $("emp-submit").disabled = false;
     $("emp-submit").textContent = "Enregistrer";
+    $("emp-next").disabled = false;
   }
 
   function submitEmployee(event) {
     event.preventDefault();
+    var chain = Boolean(event.submitter && event.submitter.id === "emp-next") && !editing;
     var name = $("emp-name").value.trim();
     var email = $("emp-email").value.trim();
     var needsPermit = $("emp-permit").checked;
@@ -554,7 +564,9 @@
     if (mustAttest && !$("emp-attest").checked) return fail("Cochez l'attestation pour inscrire ce salarié.");
 
     $("emp-error").hidden = true;
+    $("emp-done").hidden = true;
     $("emp-submit").disabled = true;
+    $("emp-next").disabled = true;
     $("emp-submit").textContent = "Préparation des photos…";
 
     // 1. Réduire toutes les photos AVANT d'écrire quoi que ce soit : une image illisible ne
@@ -591,9 +603,14 @@
       })
       .then(
         function () {
-          $("employee-dialog").close();
           $("emp-submit").textContent = "Enregistrer";
           loadEmployees();
+          if (chain) {
+            lastSaved = name;
+            openEmployee(null); // formulaire vidé, toujours ouvert : le salarié suivant
+          } else {
+            $("employee-dialog").close();
+          }
         },
         function (error) {
           if (error.handled) return $("employee-dialog").close();

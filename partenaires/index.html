@@ -8,7 +8,7 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src https://ipwddkwtpcmieijhqpup.supabase.co http://localhost:54321; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex">
-<title>Espace partenaire · AirClean</title>
+<title>Espace partenaire professionnel · AirClean</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -36,8 +36,9 @@
   <section id="view-login" hidden>
     <div class="login">
       <div>
-        <h1>Espace partenaire</h1>
-        <p class="lede">Connectez-vous avec le compte de votre application AirClean intervenant. Vous retrouvez ici votre compte et vos relevés. Les sociétés partenaires y inscrivent aussi leurs salariés.</p>
+        <h1>Espace partenaire professionnel</h1>
+        <p class="lede">Pour les sociétés (ménage, maintenance, dépannage) et les auto-entrepreneurs. Votre société s'inscrit une fois — Kbis, pièce d'identité du dirigeant, identité du dirigeant vérifiée —, puis vous inscrivez ici vos salariés, l'un après l'autre, en quelques secondes. Vous y retrouvez aussi vos relevés.</p>
+        <p class="cta"><a class="btn" href="https://airclean-intervenant.pages.dev/">Inscrire ma société</a></p>
       </div>
       <form id="login-form" class="card" novalidate>
         <label for="login-email">Adresse e-mail</label>
@@ -46,7 +47,7 @@
         <input id="login-password" type="password" autocomplete="current-password" required>
         <p class="error" id="login-error" role="alert" hidden></p>
         <button type="submit" class="btn" id="login-submit">Se connecter</button>
-        <p class="hint">Mot de passe oublié, ou pas encore de compte ? Tout se fait dans l'application.</p>
+        <p class="hint">Pas encore de compte ? « Inscrire ma société », puis choisissez « Société ». Mot de passe oublié : dans l'application.</p>
       </form>
     </div>
   </section>
@@ -54,7 +55,8 @@
   <!-- Pas de dossier d'intervenant -->
   <section id="view-none" hidden>
     <h1>Pas encore partenaire</h1>
-    <p class="lede">Ce compte n'a pas de dossier d'intervenant. Pour devenir partenaire, déposez votre dossier depuis l'application AirClean intervenant, puis revenez ici.</p>
+    <p class="lede">Ce compte n'a pas encore de dossier partenaire. Inscrivez votre société (Kbis, pièce d'identité du dirigeant), puis revenez ici pour inscrire vos salariés.</p>
+    <p class="cta"><a class="btn" href="https://airclean-intervenant.pages.dev/">Inscrire ma société</a></p>
   </section>
 
   <!-- Espace -->
@@ -99,6 +101,7 @@
 <dialog id="employee-dialog" aria-labelledby="employee-title">
   <form id="employee-form" novalidate>
     <h2 id="employee-title">Inscrire un salarié</h2>
+    <p class="done" id="emp-done" role="status" hidden></p>
 
     <label for="emp-name">Nom et prénom</label>
     <input id="emp-name" type="text" autocomplete="off" maxlength="120" required>
@@ -134,6 +137,7 @@
     <p class="error" id="emp-error" role="alert" hidden></p>
     <div class="actions">
       <button type="button" class="btn ghost" id="emp-cancel">Annuler</button>
+      <button type="submit" class="btn ghost" id="emp-next">Enregistrer et inscrire le suivant</button>
       <button type="submit" class="btn" id="emp-submit">Enregistrer</button>
     </div>
   </form>

@@ -153,3 +153,17 @@ dialog p { margin-top: 10px; color: var(--ink-2); }
   details.month summary { grid-template-columns: 1fr auto; }
   details.month summary span { grid-column: 1; grid-row: 2; }
 }
+
+/* « ✓ X est inscrit. Au suivant. » — inscription des salariés à la chaîne. */
+.done {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #e7f6ec;
+  color: #14632f;
+  font-weight: 600;
+}
+
+/* Lien présenté comme un bouton (« Inscrire ma société »). */
+a.btn { display: inline-block; text-decoration: none; }
+.cta { margin-top: 18px; }
