@@ -430,9 +430,7 @@
     // 0047 : AirClean donne son accord après avoir vu la pièce d'identité.
     // Pas « inscrit » tant que l'identité n'est pas vérifiée par le salarié lui-même.
     if (employee.account === "joined") return el("span", { class: "badge warn", text: "Rejoint — identité à vérifier par le salarié" });
-    if (employee.account === "verified" && !employee.cleared_at) {
-      return el("span", { class: "badge warn", text: "Identité vérifiée — en attente de l'accord d'AirClean" });
-    }
+    // Un salarié de société n'a pas d'accord AirClean à donner : son identité vérifiée suffit.
     var account = ACCOUNT[employee.account] || ACCOUNT.not_invited;
     return el("span", { class: "badge" + (account[1] ? " " + account[1] : ""), text: account[0] });
   }
