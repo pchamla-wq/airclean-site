@@ -103,39 +103,22 @@
     <h2 id="employee-title">Inscrire un salarié</h2>
     <p class="done" id="emp-done" role="status" hidden></p>
 
-    <label for="emp-name">Nom et prénom</label>
-    <input id="emp-name" type="text" autocomplete="off" maxlength="120" required>
+    <label for="emp-first">Prénom</label>
+    <input id="emp-first" type="text" autocomplete="given-name" maxlength="60" required>
+
+    <label for="emp-name">Nom</label>
+    <input id="emp-name" type="text" autocomplete="family-name" maxlength="60" required>
 
     <label for="emp-email">Adresse e-mail du salarié</label>
     <input id="emp-email" type="email" autocomplete="off" maxlength="254" required>
     <p class="note">Il recevra à cette adresse l'invitation à créer son compte dans l'app AirClean Pro.</p>
 
-    <label for="emp-phone">Téléphone du salarié</label>
-    <input id="emp-phone" type="tel" autocomplete="off" maxlength="30" placeholder="06 12 34 56 78" required>
 
-    <fieldset>
-      <legend>Pièce d'identité <span class="req">obligatoire</span></legend>
-      <p class="hint">Carte d'identité, passeport ou titre de séjour. Une photo nette, recto puis verso s'il y en a un.</p>
-      <ul class="files" id="emp-identity-files"></ul>
-      <input id="emp-identity" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-    </fieldset>
-
-    <label class="check" for="emp-permit">
-      <input id="emp-permit" type="checkbox">
-      <span>Ce salarié a besoin d'un titre de séjour pour travailler en France <small>(il n'est ni français, ni ressortissant de l'Union européenne, de l'Espace économique européen ou de la Suisse)</small></span>
-    </label>
-
-    <fieldset id="emp-permit-box" hidden>
-      <legend>Titre de séjour autorisant le travail <span class="req">obligatoire</span></legend>
-      <ul class="files" id="emp-permit-files"></ul>
-      <input id="emp-permit-file" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-      <label for="emp-until">Date de fin de validité</label>
-      <input id="emp-until" type="date">
-    </fieldset>
+    <p class="hint">Le salarié reçoit un e-mail d'invitation. Il crée son compte, renseigne lui-même son téléphone, puis vérifie son identité. Aucune pièce à envoyer.</p>
 
     <label class="check" for="emp-attest" id="emp-attest-row">
       <input id="emp-attest" type="checkbox">
-      <span>J'atteste être l'employeur de cette personne, avoir vérifié son identité et son droit de travailler en France, et l'avoir informée que ces pièces sont transmises à AirClean.</span>
+      <span>J'atteste être l'employeur de cette personne.</span>
     </label>
 
     <p class="error" id="emp-error" role="alert" hidden></p>

@@ -52,7 +52,7 @@
   var ERRORS = {
     AC157: "Ce compte n'a pas de dossier d'intervenant.",
     AC321: "Ce numéro de téléphone n'est pas valide : indiquez un numéro français (06…) ou international (+33…).",
-    AC322: "Complétez d'abord la fiche (adresse e-mail et pièce d'identité) avant d'inviter ce salarié.",
+    AC322: "Complétez d'abord la fiche (nom et adresse e-mail) avant d'inviter ce salarié.",
     AC323: "Ce salarié a déjà créé son compte : son adresse ne se change plus ici.",
     AC324: "Cette invitation vient d'être envoyée. Attendez quelques minutes avant de la renvoyer.",
     AC328: "Trop d'invitations envoyées aujourd'hui. Réessayez demain.",
@@ -468,7 +468,7 @@
     var can = overview.can_manage_employees;
     $("employee-add").hidden = !can;
     $("employees-note").textContent = can
-      ? "Inscrivez ici les salariés qui interviennent pour votre société : un nom, une adresse e-mail, un téléphone, la photo d'une pièce d'identité et, si besoin, celle du titre de séjour. Puis invitez-les : ils reçoivent un e-mail, créent leur compte dans l'app et le rattachent à votre société. Il n'ont rien d'autre à remplir ; seule leur identité est vérifiée. Vous restez leur employeur et responsable de ces vérifications."
+      ? "Inscrivez ici les salariés qui interviennent pour votre société : un nom et une adresse e-mail. Chaque salarié reçoit un e-mail d'invitation, crée son compte dans l'app et vérifie lui-même son identité."
       : "Votre dossier de société n'est pas validé pour l'instant : vous pouvez consulter et retirer vos salariés, mais pas en inscrire de nouveaux.";
 
     var box = $("employees");
@@ -485,9 +485,6 @@
         var label = (KINDS[doc.kind] || doc.kind) + (same.length > 1 ? " " + (same.indexOf(doc) + 1) : "");
         docs.appendChild(el("button", { type: "button", class: "btn ghost small", text: label, onclick: function () { openViewer(doc.path, label + " de " + employee.full_name); } }));
       });
-      if (employee.needs_permit && employee.permit_expires_on) {
-        docs.appendChild(el("span", { text: "Titre valable jusqu'au " + dateFormat.format(new Date(employee.permit_expires_on + "T00:00:00Z")) }));
-      }
       var invitable = can && employee.state === "registered" && (employee.account === "not_invited" || employee.account === "invited");
       var actions = el("div", { class: "actions" }, [
         invitable
@@ -545,14 +542,11 @@
     editing = employee || null;
     doomed = [];
     $("employee-title").textContent = editing ? "Modifier " + editing.full_name : "Inscrire un salarié";
-    $("emp-name").value = editing ? editing.full_name : "";
+    // Le nom complet enregistré (« Prénom Nom ») est découpé : le premier mot est le prénom.
+    var parts = editing && editing.full_name ? editing.full_name.trim().split(/\s+/) : [];
+    $("emp-first").value = parts.length ? parts[0] : "";
+    $("emp-name").value = parts.length > 1 ? parts.slice(1).join(" ") : "";
     $("emp-email").value = editing ? editing.email || "" : "";
-    $("emp-phone").value = editing ? editing.phone || "" : "";
-    $("emp-phone").readOnly = Boolean(editing && editing.account !== "not_invited" && editing.account !== "invited" && editing.phone);
-    $("emp-permit").checked = editing ? editing.needs_permit : false;
-    $("emp-until").value = editing && editing.permit_expires_on ? editing.permit_expires_on : "";
-    $("emp-identity").value = "";
-    $("emp-permit-file").value = "";
     $("emp-attest").checked = false;
     // L'attestation se donne à l'inscription ; une fiche ancienne qui n'en a pas la demande à sa première correction.
     $("emp-attest-row").hidden = Boolean(editing && editing.attested_at);
@@ -566,13 +560,13 @@
     lastSaved = null;
     renderDialogFiles();
     if (!$("employee-dialog").open) $("employee-dialog").showModal();
-    $("emp-name").focus();
+    $("emp-first").focus();
   }
 
   /** Les pièces déjà déposées, dans la fiche, avec de quoi en retirer une. */
   function renderDialogFiles() {
-    $("emp-permit-box").hidden = !$("emp-permit").checked;
-    [["identity", "emp-identity-files"], ["permit", "emp-permit-files"]].forEach(function (pair) {
+    // Aucune pièce à fournir par la société : le salarié vérifie son identité lui-même (0056).
+    [].forEach(function (pair) {
       var list = $(pair[1]);
       list.replaceChildren();
       (editing ? editing.documents : [])
@@ -603,21 +597,19 @@
   function submitEmployee(event) {
     event.preventDefault();
     var chain = Boolean(event.submitter && event.submitter.id === "emp-next") && !editing;
-    var name = $("emp-name").value.trim();
+    var firstName = $("emp-first").value.trim().replace(/\s+/g, " ");
+    var lastName = $("emp-name").value.trim().replace(/\s+/g, " ");
+    var name = [firstName, lastName].filter(Boolean).join(" ");
     var email = $("emp-email").value.trim();
-    var phone = $("emp-phone").value.trim();
-    var needsPermit = $("emp-permit").checked;
-    var until = needsPermit ? $("emp-until").value || null : null;
-    var identity = Array.prototype.slice.call($("emp-identity").files);
-    var permit = needsPermit ? Array.prototype.slice.call($("emp-permit-file").files) : [];
+    var needsPermit = false;
+    var until = null;
+    var identity = [];
+    var permit = [];
     var perKind = overview.limits.files_per_kind;
 
     // Les mêmes règles que le serveur, dites tout de suite et en clair.
     if (name.length < 2) return fail("Écrivez le nom et le prénom du salarié.");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Écrivez une adresse e-mail valide pour ce salarié.");
-    if (!/^(\+|00)?[0-9][0-9 .\-()]{7,20}$/.test(phone)) return fail("Écrivez le numéro de téléphone du salarié (par exemple 06 12 34 56 78).");
-    if (keptCount("identity") + identity.length < 1) return fail("Ajoutez la photo de la pièce d'identité.");
-    if (keptCount("identity") + identity.length > perKind) return fail("Deux photos au plus pour la pièce d'identité (recto et verso).");
     if (needsPermit && keptCount("permit") + permit.length < 1) return fail("Ajoutez la photo du titre de séjour.");
     if (needsPermit && keptCount("permit") + permit.length > perKind) return fail("Deux photos au plus pour le titre de séjour (recto et verso).");
     if (needsPermit && !until) return fail("Indiquez la date de fin de validité du titre de séjour.");
@@ -651,7 +643,6 @@
               p_needs_permit: needsPermit,
               p_permit_expires_on: until,
               p_attested: mustAttest,
-              p_phone: phone || null,
             });
           })
           .then(function (saved) {
@@ -771,7 +762,6 @@
   $("export-csv").addEventListener("click", exportCsv);
   $("employee-add").addEventListener("click", function () { openEmployee(null); });
   $("employee-form").addEventListener("submit", submitEmployee);
-  $("emp-permit").addEventListener("change", renderDialogFiles);
   $("emp-cancel").addEventListener("click", function () { $("employee-dialog").close(); });
   $("confirm-no").addEventListener("click", function () { $("confirm-dialog").close(); });
   $("confirm-yes").addEventListener("click", confirmRemove);
