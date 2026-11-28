@@ -40,6 +40,10 @@
         <p class="lede">Pour les sociétés (ménage, maintenance, dépannage) et les auto-entrepreneurs. Votre société s'inscrit une fois — Kbis, pièce d'identité du dirigeant, identité du dirigeant vérifiée —, puis vous inscrivez ici vos salariés, l'un après l'autre, en quelques secondes. Vous y retrouvez aussi vos relevés.</p>
         <p class="cta"><a class="btn" href="https://airclean-intervenant.pages.dev/">Inscrire ma société</a></p>
       </div>
+      <div class="oauth">
+        <button type="button" class="btn ghost" id="login-apple">Continuer avec Apple</button>
+        <button type="button" class="btn ghost" id="login-google">Continuer avec Google</button>
+      </div>
       <form id="login-form" class="card" novalidate>
         <label for="login-email">Adresse e-mail</label>
         <input id="login-email" type="email" autocomplete="username" required>
@@ -47,7 +51,29 @@
         <input id="login-password" type="password" autocomplete="current-password" required>
         <p class="error" id="login-error" role="alert" hidden></p>
         <button type="submit" class="btn" id="login-submit">Se connecter</button>
-        <p class="hint">Pas encore de compte ? « Inscrire ma société », puis choisissez « Société ». Mot de passe oublié : dans l'application.</p>
+        <p class="hint"><a href="#" id="show-signup">Pas encore de compte ? Créer mon compte partenaire</a></p>
+      </form>
+      <form id="signup-form" class="card" novalidate hidden>
+        <h2>Créer mon compte partenaire</h2>
+        <label for="signup-first">Prénom</label>
+        <input id="signup-first" type="text" autocomplete="given-name" maxlength="60" required>
+        <label for="signup-last">Nom</label>
+        <input id="signup-last" type="text" autocomplete="family-name" maxlength="60" required>
+        <label for="signup-email">Adresse e-mail</label>
+        <input id="signup-email" type="email" autocomplete="username" maxlength="254" required>
+        <label for="signup-password">Mot de passe (8 caractères au moins)</label>
+        <input id="signup-password" type="password" autocomplete="new-password" minlength="8" required>
+        <p class="error" id="signup-error" role="alert" hidden></p>
+        <button type="submit" class="btn" id="signup-submit">Créer mon compte</button>
+        <p class="hint"><a href="#" id="show-login">J'ai déjà un compte</a></p>
+      </form>
+      <form id="code-form" class="card" novalidate hidden>
+        <h2>Vérifiez votre adresse</h2>
+        <p class="hint" id="code-hint">Saisissez le code à six chiffres reçu par e-mail.</p>
+        <label for="code-input">Code</label>
+        <input id="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required>
+        <p class="error" id="code-error" role="alert" hidden></p>
+        <button type="submit" class="btn" id="code-submit">Valider</button>
       </form>
     </div>
   </section>

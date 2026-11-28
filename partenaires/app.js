@@ -750,6 +750,115 @@
     }
   }
 
+  // ───────────────────────────── Connexion Apple / Google et création de compte ─────────────────────────────
+
+  /** Retour d'une connexion Apple ou Google : les jetons arrivent dans l'adresse, après le « # ». */
+  function takeProviderSession() {
+    var hash = location.hash.replace(/^#/, "");
+    if (hash.indexOf("access_token=") < 0 && hash.indexOf("error_description=") < 0) return;
+    var params = new URLSearchParams(hash);
+    if (params.get("error_description")) banner(params.get("error_description").replace(/\+/g, " "));
+    if (params.get("access_token")) keepSession({ access_token: params.get("access_token"), refresh_token: params.get("refresh_token") });
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  /** Renvoie vers la connexion du fournisseur ; il revient ici avec la session. */
+  function providerLogin(provider) {
+    var back = location.origin + location.pathname;
+    location.assign(CONFIG.supabaseUrl + "/auth/v1/authorize?provider=" + provider + "&redirect_to=" + encodeURIComponent(back));
+  }
+
+  function showSignup(on) {
+    $("login-form").hidden = on;
+    $("signup-form").hidden = !on;
+    $("code-form").hidden = true;
+    $("login-error").hidden = true;
+    $("signup-error").hidden = true;
+    $("login-password").value = "";
+  }
+
+  var pendingEmail = "";
+
+  function signupMessage(error) {
+    if (error && (error.status === 422 || /already|exists/i.test(error.code || "") || /already|exists/i.test(error.message || ""))) {
+      return "Un compte existe déjà avec cette adresse. Connectez-vous, ou utilisez « Mot de passe oublié » dans l'application.";
+    }
+    return messageOf(error);
+  }
+
+  /** Crée le compte partenaire ; un code à six chiffres part par e-mail, à saisir ensuite. */
+  function signup(event) {
+    event.preventDefault();
+    var first = $("signup-first").value.trim().replace(/\s+/g, " ");
+    var last = $("signup-last").value.trim().replace(/\s+/g, " ");
+    var email = $("signup-email").value.trim();
+    var password = $("signup-password").value;
+    var invalid =
+      first.length < 2 ? "Indiquez votre prénom." :
+      last.length < 2 ? "Indiquez votre nom." :
+      !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email) ? "Écrivez une adresse e-mail valide." :
+      password.length < 8 ? "Le mot de passe doit faire 8 caractères au moins." : null;
+    if (invalid) {
+      $("signup-error").textContent = invalid;
+      $("signup-error").hidden = false;
+      return;
+    }
+    $("signup-submit").disabled = true;
+    $("signup-error").hidden = true;
+    request("/auth/v1/signup", {
+      auth: false,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email, password: password, data: { full_name: first + " " + last, account_kind: "societe" } }),
+    }).then(
+      function (data) {
+        $("signup-submit").disabled = false;
+        // Confirmation d'e-mail désactivée sur le projet : la session est déjà là.
+        if (data && data.access_token) {
+          keepSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+          return start();
+        }
+        pendingEmail = email;
+        $("signup-form").hidden = true;
+        $("code-form").hidden = false;
+        $("code-hint").textContent = "Saisissez le code à six chiffres envoyé à " + email + ".";
+      },
+      function (error) {
+        $("signup-submit").disabled = false;
+        $("signup-error").textContent = signupMessage(error);
+        $("signup-error").hidden = false;
+      },
+    );
+  }
+
+  /** Valide le code reçu par e-mail : la session s'ouvre, comme pour une connexion. */
+  function confirmCode(event) {
+    event.preventDefault();
+    var token = $("code-input").value.replace(/\s/g, "");
+    if (!/^[0-9]{6}$/.test(token)) {
+      $("code-error").textContent = "Le code fait six chiffres.";
+      $("code-error").hidden = false;
+      return;
+    }
+    $("code-submit").disabled = true;
+    $("code-error").hidden = true;
+    request("/auth/v1/verify", {
+      auth: false,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "signup", email: pendingEmail, token: token }),
+    }).then(
+      function (data) {
+        $("code-submit").disabled = false;
+        keepSession({ access_token: data.access_token, refresh_token: data.refresh_token });
+        start();
+      },
+      function (error) {
+        $("code-submit").disabled = false;
+        $("code-error").textContent = "Code incorrect ou expiré. Recommencez l'inscription si besoin.";
+        $("code-error").hidden = false;
+      },
+    );
+  }
+
   // ───────────────────────────── Démarrage ─────────────────────────────
 
   if (!CONFIG.supabaseUrl || !CONFIG.publicKey || /service_role|^sb_secret_/.test(CONFIG.publicKey)) {
@@ -767,6 +876,13 @@
   $("confirm-yes").addEventListener("click", confirmRemove);
   $("viewer-close").addEventListener("click", closeViewer);
   $("viewer").addEventListener("close", function () { $("viewer-img").removeAttribute("src"); });
+  $("login-apple").addEventListener("click", function () { providerLogin("apple"); });
+  $("login-google").addEventListener("click", function () { providerLogin("google"); });
+  $("show-signup").addEventListener("click", function (event) { event.preventDefault(); showSignup(true); });
+  $("show-login").addEventListener("click", function (event) { event.preventDefault(); showSignup(false); });
+  $("signup-form").addEventListener("submit", signup);
+  $("code-form").addEventListener("submit", confirmCode);
   window.addEventListener("hashchange", route);
+  takeProviderSession();
   start();
 })();
