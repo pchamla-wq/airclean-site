@@ -425,6 +425,7 @@
   }
 
   function stateBadge(employee) {
+    if (employee.suspended_at) return el("span", { class: "badge danger", text: "Suspendu — n'accède plus à l'app" });
     if (employee.state === "permit_expired") return el("span", { class: "badge danger", text: "Titre de séjour expiré" });
     // Le nom est saisi par le salarié lui-même, à son inscription : tant qu'il manque, on le dit.
     if (!employee.full_name && employee.account === "not_invited") return el("span", { class: "badge", text: "Nom à saisir par le salarié" });
@@ -460,6 +461,20 @@
     );
   }
 
+  /** Suspendre ou réactiver un salarié : pas de modification du nom, du prénom ni de l'e-mail. */
+  function toggleSuspended(employee) {
+    var suspend = !employee.suspended_at;
+    rpc("partner_set_employee_suspended", { p_id: employee.id, p_suspended: suspend }).then(
+      function () {
+        banner(suspend ? employee.full_name + " est suspendu : il n'accède plus à l'app." : employee.full_name + " est réactivé.");
+        loadEmployees();
+      },
+      function (error) {
+        if (!error.handled) banner(messageOf(error));
+      },
+    );
+  }
+
   /** Appel d'une fonction serveur, avec la session de la société. */
   function authedFunction(name, body) {
     return authed("/functions/v1/" + name, { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }).catch(function (error) {
@@ -490,7 +505,7 @@
         docs.appendChild(el("button", { type: "button", class: "btn ghost small", text: label, onclick: function () { openViewer(doc.path, label + " de " + employee.full_name); } }));
       });
       // Invitable dès que l'adresse et l'attestation sont là : le nom, c'est le salarié qui le saisit (le serveur contrôle le reste).
-      var invitable = can && Boolean(employee.email) && (employee.account === "not_invited" || employee.account === "invited");
+      var invitable = can && !employee.suspended_at && Boolean(employee.email) && (employee.account === "not_invited" || employee.account === "invited");
       var actions = el("div", { class: "actions" }, [
         invitable
           ? el("button", {
@@ -501,7 +516,7 @@
               onclick: function () { invite(employee); },
             })
           : null,
-        can ? el("button", { type: "button", class: "btn ghost small", text: "Modifier", onclick: function () { openEmployee(employee); } }) : null,
+        can ? el("button", { type: "button", class: "btn ghost small", text: employee.suspended_at ? "Réactiver" : "Suspendre", onclick: function () { toggleSuspended(employee); } }) : null,
         el("button", { type: "button", class: "btn ghost small", text: "Retirer", onclick: function () { askRemove(employee); } }),
       ]);
       box.appendChild(
