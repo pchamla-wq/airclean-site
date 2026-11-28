@@ -621,6 +621,8 @@
     $("emp-submit").disabled = true;
     $("emp-next").disabled = true;
     $("emp-submit").textContent = "Préparation des photos…";
+    // Identifiant de la fiche enregistrée : sert à envoyer l'invitation dès que la fiche est complète.
+    var savedId = null;
 
     // 1. Réduire toutes les photos AVANT d'écrire quoi que ce soit : une image illisible ne
     //    doit pas laisser une fiche à moitié faite.
@@ -646,6 +648,7 @@
             });
           })
           .then(function (saved) {
+            savedId = saved.id;
             // 4. Les nouvelles pièces, l'une après l'autre (le serveur compte les fichiers).
             return ready.reduce(function (chain, item) {
               return chain.then(function () {
@@ -658,6 +661,8 @@
         function () {
           $("emp-submit").textContent = "Enregistrer";
           loadEmployees();
+          // Nouvelle fiche : l'invitation part tout de suite (le bouton « Inviter » reste pour renvoyer).
+          if (!editing && savedId) invite({ id: savedId, email: email });
           if (chain) {
             lastSaved = name;
             openEmployee(null); // formulaire vidé, toujours ouvert : le salarié suivant
