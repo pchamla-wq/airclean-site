@@ -424,7 +424,9 @@
 
   function stateBadge(employee) {
     if (employee.state === "permit_expired") return el("span", { class: "badge danger", text: "Titre de séjour expiré" });
-    if (employee.state !== "registered") return el("span", { class: "badge warn", text: "Pièces manquantes" });
+    // Le nom est saisi par le salarié lui-même, à son inscription : tant qu'il manque, on le dit.
+    if (!employee.full_name && employee.account === "not_invited") return el("span", { class: "badge", text: "Nom à saisir par le salarié" });
+    if (employee.state !== "registered" && employee.account === "not_invited") return el("span", { class: "badge warn", text: "Pièces manquantes" });
     // 0047 : AirClean donne son accord après avoir vu la pièce d'identité.
     if ((employee.account === "joined" || employee.account === "verified") && !employee.cleared_at) {
       return el("span", { class: "badge warn", text: "Inscrit — en attente de l'accord d'AirClean" });
@@ -485,7 +487,8 @@
         var label = (KINDS[doc.kind] || doc.kind) + (same.length > 1 ? " " + (same.indexOf(doc) + 1) : "");
         docs.appendChild(el("button", { type: "button", class: "btn ghost small", text: label, onclick: function () { openViewer(doc.path, label + " de " + employee.full_name); } }));
       });
-      var invitable = can && employee.state === "registered" && (employee.account === "not_invited" || employee.account === "invited");
+      // Invitable dès que l'adresse et l'attestation sont là : le nom, c'est le salarié qui le saisit (le serveur contrôle le reste).
+      var invitable = can && Boolean(employee.email) && (employee.account === "not_invited" || employee.account === "invited");
       var actions = el("div", { class: "actions" }, [
         invitable
           ? el("button", {
@@ -501,7 +504,7 @@
       ]);
       box.appendChild(
         el("article", { class: "employee" }, [
-          el("header", {}, [el("div", {}, [el("h3", { text: employee.full_name }), el("p", { class: "mail", text: [employee.email, employee.phone].filter(Boolean).join(" · ") || "—" })]), stateBadge(employee)]),
+          el("header", {}, [el("div", {}, [el("h3", { text: employee.full_name || "Salarié (nom à saisir par lui-même)" }), el("p", { class: "mail", text: [employee.email, employee.phone].filter(Boolean).join(" · ") || "—" })]), stateBadge(employee)]),
           docs,
           actions,
         ]),
