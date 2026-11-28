@@ -55,6 +55,7 @@
     AC322: "Complétez d'abord la fiche (adresse e-mail et pièce d'identité) avant d'inviter ce salarié.",
     AC323: "Ce salarié a déjà créé son compte : son adresse ne se change plus ici.",
     AC324: "Cette invitation vient d'être envoyée. Attendez quelques minutes avant de la renvoyer.",
+    AC328: "Trop d'invitations envoyées aujourd'hui. Réessayez demain.",
     AC158: "Cette rubrique est réservée aux sociétés partenaires dont le dossier est validé.",
     AC159: "Vérifiez la fiche : un nom, une adresse e-mail valide et, s'il y a un titre de séjour, une date de fin plausible.",
     AC160: "Cette adresse e-mail est déjà inscrite pour un autre de vos salariés.",
@@ -424,6 +425,10 @@
   function stateBadge(employee) {
     if (employee.state === "permit_expired") return el("span", { class: "badge danger", text: "Titre de séjour expiré" });
     if (employee.state !== "registered") return el("span", { class: "badge warn", text: "Pièces manquantes" });
+    // 0047 : AirClean donne son accord après avoir vu la pièce d'identité.
+    if ((employee.account === "joined" || employee.account === "verified") && !employee.cleared_at) {
+      return el("span", { class: "badge warn", text: "Inscrit — en attente de l'accord d'AirClean" });
+    }
     var account = ACCOUNT[employee.account] || ACCOUNT.not_invited;
     return el("span", { class: "badge" + (account[1] ? " " + account[1] : ""), text: account[0] });
   }
