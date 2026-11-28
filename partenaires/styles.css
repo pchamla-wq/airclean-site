@@ -167,3 +167,12 @@ dialog p { margin-top: 10px; color: var(--ink-2); }
 /* Lien présenté comme un bouton (« Inscrire ma société »). */
 a.btn { display: inline-block; text-decoration: none; }
 .cta { margin-top: 18px; }
+
+/* Connexion Apple et Google : boutons aux couleurs et logos officiels. */
+.oauth { display: grid; gap: 10px; margin-bottom: 14px; }
+.provider { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 44px; border-radius: 8px; font: inherit; font-size: 15px; font-weight: 600; cursor: pointer; }
+.provider .ico { width: 18px; height: 18px; flex: none; }
+.provider.apple { background: #000; color: #fff; border: 1px solid #000; }
+.provider.google { background: #fff; color: #1f1f1f; border: 1px solid #747775; }
+.provider:hover { filter: brightness(0.96); }
+.provider:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; }
