@@ -424,18 +424,16 @@
     );
   }
 
+  /** Un SEUL statut par salarié (même règle que l'app et le back-office). */
   function stateBadge(employee) {
-    if (employee.suspended_at) return el("span", { class: "badge danger", text: "Suspendu — n'accède plus à l'app" });
-    if (employee.state === "permit_expired") return el("span", { class: "badge danger", text: "Titre de séjour expiré" });
-    // Le nom est saisi par le salarié lui-même, à son inscription : tant qu'il manque, on le dit.
-    if (!employee.full_name && employee.account === "not_invited") return el("span", { class: "badge", text: "Nom à saisir par le salarié" });
-    if (employee.state !== "registered" && employee.account === "not_invited") return el("span", { class: "badge warn", text: "Pièces manquantes" });
-    // 0047 : AirClean donne son accord après avoir vu la pièce d'identité.
-    // Pas « inscrit » tant que l'identité n'est pas vérifiée par le salarié lui-même.
-    if (employee.account === "joined") return el("span", { class: "badge warn", text: "Rejoint — identité à vérifier par le salarié" });
-    // Un salarié de société n'a pas d'accord AirClean à donner : son identité vérifiée suffit.
-    var account = ACCOUNT[employee.account] || ACCOUNT.not_invited;
-    return el("span", { class: "badge" + (account[1] ? " " + account[1] : ""), text: account[0] });
+    var label, tone;
+    if (employee.suspended_at) { label = "Suspendu"; tone = "danger"; }
+    else if (employee.account === "verified") { label = "Inscrit"; tone = ""; }
+    else if (employee.account === "joined") {
+      if (employee.identity_state === "rejected") { label = "Identité refusée"; tone = "danger"; }
+      else { label = "En cours de vérification d'identité"; tone = "warn"; }
+    } else { label = "En cours d'inscription"; tone = "warn"; }
+    return el("span", { class: "badge" + (tone ? " " + tone : ""), text: label });
   }
 
   /** Inviter (ou renvoyer) : la société envoie au salarié le lien pour créer son compte. */
