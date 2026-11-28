@@ -71,7 +71,7 @@
   var ACCOUNT = {
     not_invited: ["Pas encore invité", "warn"],
     invited: ["Invitation envoyée", ""],
-    joined: ["Inscrit — identité à vérifier", ""],
+    joined: ["Rejoint — identité à vérifier par le salarié", "warn"],
     verified: ["Identité vérifiée", ""],
   };
 
@@ -428,8 +428,10 @@
     if (!employee.full_name && employee.account === "not_invited") return el("span", { class: "badge", text: "Nom à saisir par le salarié" });
     if (employee.state !== "registered" && employee.account === "not_invited") return el("span", { class: "badge warn", text: "Pièces manquantes" });
     // 0047 : AirClean donne son accord après avoir vu la pièce d'identité.
-    if ((employee.account === "joined" || employee.account === "verified") && !employee.cleared_at) {
-      return el("span", { class: "badge warn", text: "Inscrit — en attente de l'accord d'AirClean" });
+    // Pas « inscrit » tant que l'identité n'est pas vérifiée par le salarié lui-même.
+    if (employee.account === "joined") return el("span", { class: "badge warn", text: "Rejoint — identité à vérifier par le salarié" });
+    if (employee.account === "verified" && !employee.cleared_at) {
+      return el("span", { class: "badge warn", text: "Identité vérifiée — en attente de l'accord d'AirClean" });
     }
     var account = ACCOUNT[employee.account] || ACCOUNT.not_invited;
     return el("span", { class: "badge" + (account[1] ? " " + account[1] : ""), text: account[0] });
