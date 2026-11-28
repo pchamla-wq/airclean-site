@@ -51,6 +51,10 @@
 
   var ERRORS = {
     AC157: "Ce compte n'a pas de dossier d'intervenant.",
+    AC321: "Ce numéro de téléphone n'est pas valide : indiquez un numéro français (06…) ou international (+33…).",
+    AC322: "Complétez d'abord la fiche (adresse e-mail et pièce d'identité) avant d'inviter ce salarié.",
+    AC323: "Ce salarié a déjà créé son compte : son adresse ne se change plus ici.",
+    AC324: "Cette invitation vient d'être envoyée. Attendez quelques minutes avant de la renvoyer.",
     AC158: "Cette rubrique est réservée aux sociétés partenaires dont le dossier est validé.",
     AC159: "Vérifiez la fiche : un nom, une adresse e-mail valide et, s'il y a un titre de séjour, une date de fin plausible.",
     AC160: "Cette adresse e-mail est déjà inscrite pour un autre de vos salariés.",
@@ -63,6 +67,12 @@
   var SERVICES = { menage: "Ménage", checkin: "Check-in, check-out", maintenance: "Petits travaux" };
   var MISSION_STATUS = { to_review: "À valider", validated: "Validée", done: "Terminée" };
   var KINDS = { identity: "Pièce d'identité", permit: "Titre de séjour" };
+  var ACCOUNT = {
+    not_invited: ["Pas encore invité", "warn"],
+    invited: ["Invitation envoyée", ""],
+    joined: ["Inscrit — identité à vérifier", ""],
+    verified: ["Identité vérifiée", ""],
+  };
 
   function messageOf(error) {
     if (error && ERRORS[error.code]) return ERRORS[error.code];
@@ -343,7 +353,7 @@
             el("tbody", {}, mine.map(function (l) {
               return el("tr", {}, [
                 el("td", { text: dayFormat.format(new Date(l.scheduled_at)) }),
-                el("td", { text: SERVICES[l.category] || l.category }),
+                el("td", { text: [SERVICES[l.category] || l.category, l.employee_name ? "(" + l.employee_name + ")" : null].filter(Boolean).join(" ") }),
                 el("td", { text: [l.postcode, l.city].filter(Boolean).join(" ") || "—" }),
                 el("td", { text: MISSION_STATUS[l.status] || l.status }),
                 el("td", { class: "num", text: euros.format(Number(l.payout_eur)) }),
@@ -412,16 +422,48 @@
   }
 
   function stateBadge(employee) {
-    if (employee.state === "registered") return el("span", { class: "badge", text: "Inscrit" });
     if (employee.state === "permit_expired") return el("span", { class: "badge danger", text: "Titre de séjour expiré" });
-    return el("span", { class: "badge warn", text: "Pièces manquantes" });
+    if (employee.state !== "registered") return el("span", { class: "badge warn", text: "Pièces manquantes" });
+    var account = ACCOUNT[employee.account] || ACCOUNT.not_invited;
+    return el("span", { class: "badge" + (account[1] ? " " + account[1] : ""), text: account[0] });
+  }
+
+  /** Inviter (ou renvoyer) : la société envoie au salarié le lien pour créer son compte. */
+  function invite(employee) {
+    var button = $("inv-" + employee.id);
+    if (button) button.disabled = true;
+    authedFunction("partner-invite", { employee_id: employee.id }).then(
+      function (reply) {
+        if (reply && reply.status === "sent") {
+          banner(reply.mode === "reset"
+            ? "Un e-mail a été envoyé à " + employee.email + " : il y choisit son mot de passe, puis rejoint votre société depuis l'app."
+            : "Invitation envoyée à " + employee.email + ". Il l'ouvre sur son téléphone, choisit son mot de passe, puis rejoint votre société.");
+          loadEmployees();
+        } else {
+          banner(ERRORS[reply && reply.error] || "L'invitation n'a pas pu être envoyée. Réessayez dans un instant.");
+          if (button) button.disabled = false;
+        }
+      },
+      function (error) {
+        if (!error.handled) banner(messageOf(error));
+        if (button) button.disabled = false;
+      },
+    );
+  }
+
+  /** Appel d'une fonction serveur, avec la session de la société. */
+  function authedFunction(name, body) {
+    return authed("/functions/v1/" + name, { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) }).catch(function (error) {
+      if (error.status === 403 || error.status === 400) return { status: "refused", error: error.code || "" };
+      throw error;
+    });
   }
 
   function renderEmployees() {
     var can = overview.can_manage_employees;
     $("employee-add").hidden = !can;
     $("employees-note").textContent = can
-      ? "Inscrivez ici les salariés qui interviennent pour votre société : un nom, une adresse e-mail, la photo d'une pièce d'identité et, si besoin, celle du titre de séjour. Un salarié est inscrit dès que ses pièces sont déposées. Vous restez son employeur et responsable de ces vérifications."
+      ? "Inscrivez ici les salariés qui interviennent pour votre société : un nom, une adresse e-mail, un téléphone, la photo d'une pièce d'identité et, si besoin, celle du titre de séjour. Puis invitez-les : ils reçoivent un e-mail, créent leur compte dans l'app et le rattachent à votre société. Il n'ont rien d'autre à remplir ; seule leur identité est vérifiée. Vous restez leur employeur et responsable de ces vérifications."
       : "Votre dossier de société n'est pas validé pour l'instant : vous pouvez consulter et retirer vos salariés, mais pas en inscrire de nouveaux.";
 
     var box = $("employees");
@@ -441,13 +483,23 @@
       if (employee.needs_permit && employee.permit_expires_on) {
         docs.appendChild(el("span", { text: "Titre valable jusqu'au " + dateFormat.format(new Date(employee.permit_expires_on + "T00:00:00Z")) }));
       }
+      var invitable = can && employee.state === "registered" && (employee.account === "not_invited" || employee.account === "invited");
       var actions = el("div", { class: "actions" }, [
+        invitable
+          ? el("button", {
+              type: "button",
+              class: "btn small",
+              id: "inv-" + employee.id,
+              text: employee.account === "invited" ? "Renvoyer l'invitation" : "Inviter à créer son compte",
+              onclick: function () { invite(employee); },
+            })
+          : null,
         can ? el("button", { type: "button", class: "btn ghost small", text: "Modifier", onclick: function () { openEmployee(employee); } }) : null,
         el("button", { type: "button", class: "btn ghost small", text: "Retirer", onclick: function () { askRemove(employee); } }),
       ]);
       box.appendChild(
         el("article", { class: "employee" }, [
-          el("header", {}, [el("div", {}, [el("h3", { text: employee.full_name }), el("p", { class: "mail", text: employee.email || "—" })]), stateBadge(employee)]),
+          el("header", {}, [el("div", {}, [el("h3", { text: employee.full_name }), el("p", { class: "mail", text: [employee.email, employee.phone].filter(Boolean).join(" · ") || "—" })]), stateBadge(employee)]),
           docs,
           actions,
         ]),
@@ -490,6 +542,8 @@
     $("employee-title").textContent = editing ? "Modifier " + editing.full_name : "Inscrire un salarié";
     $("emp-name").value = editing ? editing.full_name : "";
     $("emp-email").value = editing ? editing.email || "" : "";
+    $("emp-phone").value = editing ? editing.phone || "" : "";
+    $("emp-phone").readOnly = Boolean(editing && editing.account !== "not_invited" && editing.account !== "invited" && editing.phone);
     $("emp-permit").checked = editing ? editing.needs_permit : false;
     $("emp-until").value = editing && editing.permit_expires_on ? editing.permit_expires_on : "";
     $("emp-identity").value = "";
@@ -546,6 +600,7 @@
     var chain = Boolean(event.submitter && event.submitter.id === "emp-next") && !editing;
     var name = $("emp-name").value.trim();
     var email = $("emp-email").value.trim();
+    var phone = $("emp-phone").value.trim();
     var needsPermit = $("emp-permit").checked;
     var until = needsPermit ? $("emp-until").value || null : null;
     var identity = Array.prototype.slice.call($("emp-identity").files);
@@ -555,6 +610,7 @@
     // Les mêmes règles que le serveur, dites tout de suite et en clair.
     if (name.length < 2) return fail("Écrivez le nom et le prénom du salarié.");
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("Écrivez une adresse e-mail valide pour ce salarié.");
+    if (!/^(\+|00)?[0-9][0-9 .\-()]{7,20}$/.test(phone)) return fail("Écrivez le numéro de téléphone du salarié (par exemple 06 12 34 56 78).");
     if (keptCount("identity") + identity.length < 1) return fail("Ajoutez la photo de la pièce d'identité.");
     if (keptCount("identity") + identity.length > perKind) return fail("Deux photos au plus pour la pièce d'identité (recto et verso).");
     if (needsPermit && keptCount("permit") + permit.length < 1) return fail("Ajoutez la photo du titre de séjour.");
@@ -590,6 +646,7 @@
               p_needs_permit: needsPermit,
               p_permit_expires_on: until,
               p_attested: mustAttest,
+              p_phone: phone || null,
             });
           })
           .then(function (saved) {
