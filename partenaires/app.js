@@ -220,7 +220,7 @@
   var employees = [];
 
   function show(view) {
-    ["view-login", "view-none", "view-app"].forEach(function (id) {
+    ["view-login", "view-none", "view-employee", "view-app"].forEach(function (id) {
       $(id).hidden = id !== view;
     });
     $("loading").hidden = true;
@@ -244,6 +244,8 @@
     rpc("partner_overview").then(
       function (data) {
         overview = data;
+        // Un salarié de société n'a pas d'espace web : il travaille depuis l'app.
+        if (data.runner && data.runner.legal_form === "salarie_societe") return show("view-employee");
         $("who-name").textContent = data.profile.full_name || data.profile.email;
         $("nav-salaries").hidden = !data.is_company;
         show("view-app");
